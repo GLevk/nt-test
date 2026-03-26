@@ -1,40 +1,85 @@
 import sys
-from decimal import Decimal, getcontext
-
-getcontext().prec = 100
 
 
-def classify_point(cx: Decimal, cy: Decimal, a: Decimal, b: Decimal, x: Decimal, y: Decimal) -> int:
-    value = ((x - cx) ** 2) / (a ** 2) + ((y - cy) ** 2) / (b ** 2)
-    one = Decimal("1")
-    if value == one:
+def check_point(center, radius, x, y):
+    center_x, center_y = center
+    radius_x, radius_y = radius
+
+    value = ((x - center_x) ** 2) / (radius_x ** 2) + ((y - center_y) ** 2) / (radius_y ** 2)
+
+    if abs(value - 1) < 1e-12:
         return 0
-    if value < one:
+    elif value < 1:
         return 1
-    return 2
+    else:
+        return 2
 
 
-def main() -> None:
+def main():
     if len(sys.argv) != 3:
-        raise SystemExit("Usage: python task2.py ellipse_file points_file")
+        print("Ошибка: нужно передать 2 файла: ellipse_file points_file")
+        return
 
     ellipse_file = sys.argv[1]
     points_file = sys.argv[2]
 
-    with open(ellipse_file, "r", encoding="utf-8") as f:
-        lines = [line.strip() for line in f if line.strip()]
+    try:
+        with open(ellipse_file, "r", encoding="utf-8") as f:
+            lines = [line.strip() for line in f if line.strip()]
+    except FileNotFoundError:
+        print("Ошибка: файл с эллипсом не найден")
+        return
 
-    cx, cy = map(Decimal, lines[0].split())
-    a, b = map(Decimal, lines[1].split())
+    if len(lines) != 2:
+        print("Ошибка: файл с эллипсом должен содержать 2 строки")
+        return
 
-    with open(points_file, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            x, y = map(Decimal, line.split())
-            print(classify_point(cx, cy, a, b, x, y))
+    try:
+        center = list(map(float, lines[0].split()))
+        radius = list(map(float, lines[1].split()))
+    except ValueError:
+        print("Ошибка: в файле эллипса должны быть числа")
+        return
+
+    if len(center) != 2 or len(radius) != 2:
+        print("Ошибка: в каждой строке файла эллипса должно быть по 2 числа")
+        return
+
+    if radius[0] <= 0 or radius[1] <= 0:
+        print("Ошибка: полуоси эллипса должны быть больше 0")
+        return
+
+    try:
+        with open(points_file, "r", encoding="utf-8") as f:
+            points_lines = [line.strip() for line in f if line.strip()]
+    except FileNotFoundError:
+        print("Ошибка: файл с точками не найден")
+        return
+
+    if len(points_lines) == 0:
+        print("Ошибка: файл с точками пустой")
+        return
+
+    points = []
+
+    for line in points_lines:
+        try:
+            point = list(map(float, line.split()))
+        except ValueError:
+            print("Ошибка: в файле точек должны быть только числа")
+            return
+
+        if len(point) != 2:
+            print("Ошибка: каждая точка должна содержать 2 числа")
+            return
+
+        points.append(point)
+
+    for point in points:
+        result = check_point(center, radius, point[0], point[1])
+        print(result)
 
 
 if __name__ == "__main__":
     main()
+
